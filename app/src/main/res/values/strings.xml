@@ -1,0 +1,57 @@
+<resources>
+    <string name="app_name" translatable="false">MN Companion</string>
+    <string name="write_nfc">Write to cartridge</string>
+    <string name="input_data_check">Input data check</string>
+    <string name="volume">Volume (0–255)</string>
+    <string name="button_up">Button \"Up\"</string>
+    <string name="button_down">Button \"Down\"</string>
+    <string name="button_play">Button \"Play/Pause\"</string>
+    <string name="cartridge">NFC cartridge</string>
+
+    <!--    sensors states-->
+    <string name="no_data">No data</string>
+    <string name="pressed">Pressed</string>
+    <string name="released">Released</string>
+
+    <!--    permission request dialog-->
+    <string name="request_permission_title">Allow Bluetooth usage</string>
+    <string name="request_permission_text">This app uses Bluetooth to connect to MN device</string>
+    <string name="close">Close</string>
+
+    <string name="app_to_control">Music application</string>
+    <string name="control_device">MN control device</string>
+
+    <string name="change_app">Change application</string>
+    <string name="choose_app">Select application</string>
+    <string name="change_device">Change MN device</string>
+    <string name="choose_device">Select MN device</string>
+    <string name="not_chosen">Not chosen</string>
+    <string name="check_device">Check MN device</string>
+    <string name="burn_cartridge">Burn NFC cartridge</string>
+    <string name="choose_another_track">Choose another track</string>
+
+    <string name="title">Title</string>
+    <string name="artist">Artist</string>
+    <string name="album">Album</string>
+    <string name="playlist">Playlist</string>
+    <string name="burn_nfc_help_text">Click the data to burn</string>
+    <string name="no_track_info_title">Cannot acquire track info</string>
+    <string name="no_track_info_text">Play the desired track so the app can get an info about it</string>
+    <string name="shuffle_tracks">Shuffle tracks</string>
+    <string name="start_from_track">Start from track</string>
+
+    <string name="all_songs">All tracks</string>
+    <string name="all_artist_songs">All artist\'s tracks</string>
+    <string name="custom_playlist">Custom playlist</string>
+    <string name="unknown_playlist">Unknown type</string>
+
+    <string name="connected">Connected</string>
+    <string name="not_connected">Not connected</string>
+    <string name="connection_error">Connection error</string>
+    <string name="no_apps_installed_title">Supported apps not found</string>
+    <string name="no_apps_installed_text">Install one of supported apps:\n%s</string>
+    <string name="choose_app_dialog_title">Choose an app</string>
+    <string name="mn_devices_not_found_title">MN devices not found</string>
+    <string name="mn_devices_not_found_text">Find a new MN device via Bluetooth settings</string>
+    <string name="flush_connection">Clear MN-device connection</string>
+</resources>

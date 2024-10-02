@@ -1,0 +1,55 @@
+<resources>
+    <string name="write_nfc">Записать на картридж</string>
+    <string name="input_data_check">Проверка данных ввода</string>
+    <string name="volume">Громкость (0–255)</string>
+    <string name="button_up">Кнопка \"Вверх\"</string>
+    <string name="button_down">Кнопка \"Вниз\"</string>
+    <string name="button_play">Кнопка \"Играть/Пауза\"</string>
+    <string name="cartridge">Картридж NFC</string>
+
+    <!--    sensors states-->
+    <string name="no_data">Нет данных</string>
+    <string name="pressed">Активна</string>
+    <string name="released">Не активна</string>
+
+    <!--    permission request dialog-->
+    <string name="request_permission_title">Разрешите использование Bluetooth</string>
+    <string name="request_permission_text">Приложение использует Bluetooth для соединения с устройством MN</string>
+    <string name="close">Закрыть</string>
+
+    <string name="app_to_control">Музыкальное приложение</string>
+    <string name="control_device">MN-устройство управления</string>
+    <string name="change_app">Сменить приложение</string>
+    <string name="choose_app">Выбрать приложение</string>
+    <string name="change_device">Сменить MN-устройство</string>
+    <string name="choose_device">Выбрать MN-устройство</string>
+    <string name="not_chosen">Не выбрано</string>
+    <string name="check_device">Проверить MN-устройство</string>
+    <string name="burn_cartridge">Записать NFC картридж</string>
+    <string name="choose_another_track">Выбрать другой трек</string>
+
+    <string name="title">Название</string>
+    <string name="artist">Исполнитель</string>
+    <string name="album">Альбом</string>
+    <string name="playlist">Список воспроизведения</string>
+    <string name="burn_nfc_help_text">Выберите данные для записи</string>
+    <string name="no_track_info_title">Информация о треке не получена</string>
+    <string name="no_track_info_text">Включите нужную композицию, чтобы приложение получило информацию о ней</string>
+    <string name="shuffle_tracks">Перемешать треки</string>
+    <string name="start_from_track">Начать с трека</string>
+
+    <string name="all_songs">Все треки</string>
+    <string name="all_artist_songs">Все треки исполнителя</string>
+    <string name="custom_playlist">Свой плейлист</string>
+    <string name="unknown_playlist">Неизвестный тип</string>
+
+    <string name="connected">Соединение установлено</string>
+    <string name="not_connected">Не подключено</string>
+    <string name="connection_error">Ошибка при подключении</string>
+    <string name="no_apps_installed_title">Поддерживаемые приложения не найдены</string>
+    <string name="no_apps_installed_text">Установите одно из приложений:\n%s</string>
+    <string name="choose_app_dialog_title">Выберите приложение</string>
+    <string name="mn_devices_not_found_title">MN-устройства не найдены</string>
+    <string name="mn_devices_not_found_text">Найдите новое MN-устройство через настройки Bluetooth</string>
+    <string name="flush_connection">Очистить соединение</string>
+</resources>
