@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 
 @SuppressLint("QueryPermissionsNeeded")
 fun PackageManager.isApplicationInstalled(packageName: String): Boolean {
@@ -25,4 +27,18 @@ fun PackageManager.isApplicationInstalled(packageName: String): Boolean {
 
 fun logd(message: String) {
     Log.d("MN_LOG", message)
+}
+
+class StateHolder {
+    private val states = mutableListOf<MutableLiveData<*>>()
+
+    fun <T> register(initialValue: T): LiveData<T> {
+        with(MutableLiveData<T>(initialValue)) {
+            states.add(this)
+            return this
+        }
+    }
+
+    fun <T> stateFor(publicData: LiveData<T>) : MutableLiveData<T> =
+        states.single { it === publicData } as MutableLiveData<T>
 }

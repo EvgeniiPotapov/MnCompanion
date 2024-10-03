@@ -6,10 +6,10 @@ import android.content.Context
 import android.widget.Toast
 import androidx.annotation.MainThread
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mn.mncompanion.R
+import com.mn.mncompanion.StateHolder
 import com.mn.mncompanion.bluetooth.BtConnectionManager
 import com.mn.mncompanion.bluetooth.MnMessage
 import com.mn.mncompanion.bluetooth.MnMessageSkippedUpdater
@@ -46,43 +46,25 @@ class MainViewModel(
     private val btConnectionManager: BtConnectionManager
 ) : ViewModel() {
     private var collectMnDataJob: Job? = null
+    private val state = StateHolder()
 
-    private val _showProgress: MutableLiveData<Boolean> = MutableLiveData(false)
-    val showProgress: LiveData<Boolean> get() = _showProgress
-
-    private val _chosenApp: MutableLiveData<MusicApp?> = MutableLiveData(null)
-    val chosenApp: LiveData<MusicApp?> get() = _chosenApp
-
-    private val _chosenDevice: MutableLiveData<MnBluetoothDevice?> = MutableLiveData(null)
-    val chosenDevice: LiveData<MnBluetoothDevice?> get() = _chosenDevice
-
-    private val _deviceStatus: MutableLiveData<String?> = MutableLiveData(null)
-    val deviceStatus: LiveData<String?> get() = _deviceStatus
-
-    private val _availableApps: MutableLiveData<List<MusicApp>?> = MutableLiveData(null)
-    val availableApps: LiveData<List<MusicApp>?> get() = _availableApps
-
-    private val _availableMnDevices: MutableLiveData<List<MnBluetoothDevice>?> = MutableLiveData(null)
-    val availableMnDevices: LiveData<List<MnBluetoothDevice>?> get() = _availableMnDevices
-
-    private val _showInputCheck: MutableLiveData<Boolean> = MutableLiveData(false)
-    val showInputCheck: LiveData<Boolean> get() = _showInputCheck
-
-    private val _mnMessage: MutableLiveData<MnMessage?> = MutableLiveData(null)
-    val mnMessage: LiveData<MnMessage?> get() = _mnMessage
-
-    private val _trackInfo: MutableLiveData<TrackInfo?> = MutableLiveData(null)
-    val trackInfo: LiveData<TrackInfo?> get() = _trackInfo
-
-    private val _showBurnNfcScreen: MutableLiveData<Boolean> = MutableLiveData(false)
-    val showBurnNfcScreen: LiveData<Boolean> get() = _showBurnNfcScreen
+    val showProgress: LiveData<Boolean> = state.register(false)
+    val chosenApp: LiveData<MusicApp?> = state.register(null)
+    val chosenDevice: LiveData<MnBluetoothDevice?> = state.register(null)
+    val deviceStatus: LiveData<String?> = state.register(null)
+    val availableApps: LiveData<List<MusicApp>?> = state.register(null)
+    val availableMnDevices: LiveData<List<MnBluetoothDevice>?> = state.register(null)
+    val showInputCheck: LiveData<Boolean> = state.register(false)
+    val mnMessage: LiveData<MnMessage?> = state.register(null)
+    val trackInfo: LiveData<TrackInfo?> = state.register(null)
+    val showBurnNfcScreen: LiveData<Boolean> = state.register(false)
 
     private val musicControl: AdvancedMusicControl = Poweramp(appContext)
 
     @MainThread
     fun onChooseAppClicked() {
         viewModelScope.launch(Dispatchers.IO) {
-            _availableApps.postValue(
+            stateFor(availableApps).postValue(
                 appContext.getInstalledSupportedApps()
             )
         }
@@ -90,19 +72,19 @@ class MainViewModel(
 
     @MainThread
     fun onAppChosen(app: MusicApp) {
-        _chosenApp.value = app
+        stateFor(chosenApp).value = app
         closeAppChooser()
     }
 
     @MainThread
     fun closeAppChooser() {
-        _availableApps.value = null
+        stateFor(availableApps).value = null
     }
 
     @MainThread
     fun onChooseMnDeviceClicked() {
         viewModelScope.launch(Dispatchers.IO) {
-            _availableMnDevices.postValue(
+            stateFor(availableMnDevices).postValue(
                 btConnectionManager.getBondedMNs().map { MnBluetoothDevice(it) }
             )
         }
@@ -110,25 +92,25 @@ class MainViewModel(
 
     @MainThread
     fun onMnDeviceChosen(device: MnBluetoothDevice) {
-        _chosenDevice.value = device
-        _deviceStatus.value = null
+        stateFor(chosenDevice).value = device
+        stateFor(deviceStatus).value = null
         closeMnDeviceChooser()
-       viewModelScope.launch { connectMnDevice(device) }
+        viewModelScope.launch { connectMnDevice(device) }
     }
 
     @MainThread
     fun closeMnDeviceChooser() {
-        _availableMnDevices.value = null
+        stateFor(availableMnDevices).value = null
     }
 
     @MainThread
     fun onCheckInputClicked() {
-        _showInputCheck.value = true
+        stateFor(showInputCheck).value = true
     }
 
     @MainThread
     fun closeInputCheck() {
-        _showInputCheck.value = false
+        stateFor(showInputCheck).value = false
     }
 
     @MainThread
@@ -141,18 +123,19 @@ class MainViewModel(
     @MainThread
     fun onShowBurnNfcScreen() {
         chooseTrack()
-        _showBurnNfcScreen.value = true
+        stateFor(showBurnNfcScreen).value = true
     }
 
     @MainThread
     fun closeBurnNfcScreen() {
-        _showBurnNfcScreen.value = false
+        stateFor(showBurnNfcScreen).value = false
     }
 
     @MainThread
     fun burnNfcCartridge(playlistType: TrackInfo.PlaylistType, isShuffleEnabled: Boolean, startFromTrack: Boolean) {
-        val burnString =
-            musicControl.getBurnString(BurnInfo(_trackInfo.value!!, playlistType, isShuffleEnabled, startFromTrack))
+        val burnString = musicControl.getBurnString(
+            BurnInfo(stateFor(trackInfo).value!!, playlistType, isShuffleEnabled, startFromTrack)
+        )
         with(appContext.getSharedPreferences("com.mn.mncompanion.cartridges", Context.MODE_PRIVATE).edit()) {
             putString("cart1", burnString)
             apply()
@@ -169,33 +152,36 @@ class MainViewModel(
 
     @MainThread
     fun chooseTrack() {
-        _trackInfo.value = null
+        stateFor(trackInfo).value = null
         musicControl.collectCurrentTrackInfo {
             if (it == null) {
-                Toast.makeText(appContext, "Invalid data from ${_chosenApp.value!!.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(appContext, "Invalid data from ${stateFor(chosenApp).value!!.name}", Toast.LENGTH_SHORT)
+                    .show()
             }
-            _trackInfo.value = it
+            stateFor(trackInfo).value = it
         }
     }
 
+    private fun <T> stateFor(publicData: LiveData<T>) = state.stateFor(publicData)
+
     private suspend fun connectMnDevice(device: MnBluetoothDevice) {
         withContext(Dispatchers.IO) {
-            _showProgress.postValue(true)
+            stateFor(showProgress).postValue(true)
             try {
                 logd("connectMnDevice: before btConnectionManager.connectDevice")
                 btConnectionManager.connectDevice(device.btDevice)
                 logd("connectMnDevice: after btConnectionManager.connectDevice")
-                _deviceStatus.postValue(appContext.getString(R.string.connected))
+                stateFor(deviceStatus).postValue(appContext.getString(R.string.connected))
 
                 collectMnData()
 
             } catch (e: Exception) {
-                _deviceStatus.postValue(appContext.getString(R.string.connection_error))
+                stateFor(deviceStatus).postValue(appContext.getString(R.string.connection_error))
                 withContext(Dispatchers.Main) {
                     Toast.makeText(appContext, "Bt error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             } finally {
-                _showProgress.postValue(false)
+                stateFor(showProgress).postValue(false)
             }
         }
     }
@@ -220,7 +206,10 @@ class MainViewModel(
         collectMnDataJob = viewModelScope.launch(Dispatchers.IO) {
             logd("collectMnData: starting")
             try {
-                val mnMessageUpdater = if (filterNfcData) MnMessageSkippedUpdater(viewModelScope, _mnMessage) else null
+                val mnMessageUpdater = if (filterNfcData)
+                    MnMessageSkippedUpdater(viewModelScope, stateFor(mnMessage))
+                else
+                    null
                 while (isActive) {
                     val truePackage = MnMessage.fromBytes(btConnectionManager.readNextPackage())
                     if (truePackage.isCorrupted()) {
@@ -231,19 +220,19 @@ class MainViewModel(
                     val nextPackage = mnMessageUpdater?.getSkippedMnMessage(truePackage) ?: truePackage
 
                     withContext(Dispatchers.Main) {
-                        musicControl.controlAudio(nextPackage, _mnMessage.value)
-                        if (nextPackage.nfcData.hasNewValidNfcData(_mnMessage.value?.nfcData))
+                        musicControl.controlAudio(nextPackage, stateFor(mnMessage).value)
+                        if (nextPackage.nfcData.hasNewValidNfcData(stateFor(mnMessage).value?.nfcData))
                             playTestPlaylist()
-                        _mnMessage.value = nextPackage
+                        stateFor(mnMessage).value = nextPackage
                     }
                 }
             } catch (e: Exception) {
                 logd("collectMnData: stopping")
                 withContext(Dispatchers.Main) {
-                    _deviceStatus.postValue(appContext.getString(R.string.connection_error))
+                    stateFor(deviceStatus).postValue(appContext.getString(R.string.connection_error))
                     Toast.makeText(appContext, "Bt error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-                _mnMessage.postValue(null)
+                stateFor(mnMessage).postValue(null)
             }
         }
     }
