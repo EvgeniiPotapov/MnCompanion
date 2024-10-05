@@ -12,6 +12,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 
+class UltralightHolder {
+    private var ultralight: MifareUltralight? = null
+
+    fun get() = ultralight
+
+    fun set(value: MifareUltralight?) {
+        ultralight = value
+    }
+}
+
 fun NfcAdapter.enableUltralightForegroundDispatch(activity: Activity) {
     val intent = Intent(activity, activity.javaClass).apply { addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP) }
     val pendingIntent = PendingIntent.getActivity(activity, 0, intent, PendingIntent.FLAG_MUTABLE)
@@ -35,13 +45,15 @@ fun Intent.getUltralightTag(): MifareUltralight? {
     }
 }
 
-suspend fun MifareUltralight.writeTextHash(text: String) {
+@OptIn(ExperimentalStdlibApi::class)
+suspend fun MifareUltralight.writeTextHash(text: String): String {
     if (text.isBlank() || text.isEmpty())
         throw IllegalArgumentException("Text cannot be empty")
 
-    withContext(Dispatchers.IO) {
+    return withContext(Dispatchers.IO) {
         val sha256Hash = MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8))
         writeDataToTag(sha256Hash)
+        return@withContext sha256Hash.toHexString()
     }
 }
 
@@ -49,7 +61,7 @@ suspend fun MifareUltralight.writeTextHash(text: String) {
  * Writes given bytearray to a Mifare Ultralight Tag.
  * @param data data to write. MUST be equal or less than 32 bytes, as data is written to fixed position on Tag
  */
-suspend fun MifareUltralight.writeDataToTag(data: ByteArray) {
+private suspend fun MifareUltralight.writeDataToTag(data: ByteArray) {
     if (data.size > 32)
         throw IllegalArgumentException("Cannot write more than 32 Bytes ${data.size} Bytes are given")
 

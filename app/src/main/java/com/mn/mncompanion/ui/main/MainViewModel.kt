@@ -3,6 +3,7 @@ package com.mn.mncompanion.ui.main
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.nfc.tech.MifareUltralight
 import android.widget.Toast
 import androidx.annotation.MainThread
 import androidx.lifecycle.LiveData
@@ -16,6 +17,8 @@ import com.mn.mncompanion.bluetooth.MnMessageSkippedUpdater
 import com.mn.mncompanion.bluetooth.hasNewValidNfcData
 import com.mn.mncompanion.bluetooth.isCorrupted
 import com.mn.mncompanion.logd
+import com.mn.mncompanion.nfc.UltralightHolder
+import com.mn.mncompanion.nfc.writeTextHash
 import com.mn.mncompanion.ui.components.ReadableString
 import com.mn.mncompanion.ui.musicappcontrol.AdvancedMusicControl
 import com.mn.mncompanion.ui.musicappcontrol.BurnInfo
@@ -24,6 +27,7 @@ import com.mn.mncompanion.ui.musicappcontrol.TrackInfo
 import com.mn.mncompanion.ui.musicappcontrol.getInstalledSupportedApps
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,23 +47,27 @@ class MnBluetoothDevice(val btDevice: BluetoothDevice) : ReadableString {
 
 class MainViewModel(
     private val appContext: Context,
-    private val btConnectionManager: BtConnectionManager
+    private val btConnectionManager: BtConnectionManager,
+    private val ultralightHolder: UltralightHolder
 ) : ViewModel() {
     private var collectMnDataJob: Job? = null
     private val state = StateHolder()
+    private var waitNfcJob: Job? = null
 
     val showProgress: LiveData<Boolean> = state.register(false)
+    val mnMessage: LiveData<MnMessage?> = state.register(null)
+    val trackInfo: LiveData<TrackInfo?> = state.register(null)
+
     val chosenApp: LiveData<MusicApp?> = state.register(null)
     val chosenDevice: LiveData<MnBluetoothDevice?> = state.register(null)
     val deviceStatus: LiveData<String?> = state.register(null)
     val availableApps: LiveData<List<MusicApp>?> = state.register(null)
     val availableMnDevices: LiveData<List<MnBluetoothDevice>?> = state.register(null)
     val showInputCheck: LiveData<Boolean> = state.register(false)
-    val mnMessage: LiveData<MnMessage?> = state.register(null)
-    val trackInfo: LiveData<TrackInfo?> = state.register(null)
     val showBurnNfcScreen: LiveData<Boolean> = state.register(false)
+    val showAttachNfcDialog: LiveData<Boolean> = state.register(false)
 
-    private val musicControl: AdvancedMusicControl = Poweramp(appContext)
+    private val musicControl: AdvancedMusicControl = Poweramp(appContext) // TODO: remove hardcoded Poweramp
 
     @MainThread
     fun onChooseAppClicked() {
@@ -132,20 +140,52 @@ class MainViewModel(
     }
 
     @MainThread
+    fun closeAttachNfcDialog() {
+        stateFor(showAttachNfcDialog).value = false
+        waitNfcJob?.cancel()
+        waitNfcJob = null
+    }
+
+    @MainThread
     fun burnNfcCartridge(playlistType: TrackInfo.PlaylistType, isShuffleEnabled: Boolean, startFromTrack: Boolean) {
         val burnString = musicControl.getBurnString(
             BurnInfo(stateFor(trackInfo).value!!, playlistType, isShuffleEnabled, startFromTrack)
         )
-        with(appContext.getSharedPreferences("com.mn.mncompanion.cartridges", Context.MODE_PRIVATE).edit()) {
-            putString("cart1", burnString)
-            apply()
+        stateFor(showAttachNfcDialog).value = true
+
+        waitNfcJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                logd("burning nfc...")
+                while (ultralightHolder.get() == null && isActive) {
+                    delay(200)
+                    logd("Wait for ultralight loop")
+                }
+                logd("ultralight is valid, burning...")
+                val burnKey = writeTextHashToNfcTag(burnString, ultralightHolder.get()!!)
+                with(appContext.getSharedPreferences("com.mn.mncompanion.cartridges", Context.MODE_PRIVATE).edit()) {
+                    putString(burnKey, burnString)
+                    apply()
+                }
+                logd("burning nfc - success")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(appContext, "Burn cartridge: Success", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                logd("burning nfc - error, ${e.message}")
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(appContext, "Burn cartridge: Error, ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            } finally {
+                waitNfcJob = null
+                stateFor(showAttachNfcDialog).postValue(false)
+            }
         }
     }
 
     @MainThread
-    fun playTestPlaylist() {
+    private fun playTestPlaylist(key: String) {
         appContext.getSharedPreferences("com.mn.mncompanion.cartridges", Context.MODE_PRIVATE)
-            .getString("cart1", null)?.let {
+            .getString(key, null)?.let {
                 musicControl.playMusic(it)
             }
     }
@@ -163,6 +203,17 @@ class MainViewModel(
     }
 
     private fun <T> stateFor(publicData: LiveData<T>) = state.stateFor(publicData)
+
+    @MainThread
+    private suspend fun writeTextHashToNfcTag(text: String, ultralight: MifareUltralight): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                ultralight.writeTextHash(text)
+            } catch (e: Exception) {
+                return@withContext null
+            }
+        }
+    }
 
     private suspend fun connectMnDevice(device: MnBluetoothDevice) {
         withContext(Dispatchers.IO) {
@@ -201,6 +252,7 @@ class MainViewModel(
      * We need to filter incoming data due to NFC reader behavior - even if NFC tag is not removed, it is "lost"
      * after a successful read for a ~second.
      */
+    @OptIn(ExperimentalStdlibApi::class)
     private suspend fun collectMnData(filterNfcData: Boolean = true) {
         collectMnDataJob?.cancel()
         collectMnDataJob = viewModelScope.launch(Dispatchers.IO) {
@@ -222,7 +274,7 @@ class MainViewModel(
                     withContext(Dispatchers.Main) {
                         musicControl.controlAudio(nextPackage, stateFor(mnMessage).value)
                         if (nextPackage.nfcData.hasNewValidNfcData(stateFor(mnMessage).value?.nfcData))
-                            playTestPlaylist()
+                            playTestPlaylist(nextPackage.nfcData.toHexString())
                         stateFor(mnMessage).value = nextPackage
                     }
                 }

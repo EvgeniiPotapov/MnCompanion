@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,13 +22,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mn.mncompanion.R
-import com.mn.mncompanion.logd
-import com.mn.mncompanion.ui.InputCheckSheet
+import com.mn.mncompanion.ui.checkInput.CheckInputSheet
 import com.mn.mncompanion.ui.TrackInfoSheet
 import com.mn.mncompanion.ui.components.KeyValueTextBox
 import com.mn.mncompanion.ui.components.OutlinedActionButton
 import com.mn.mncompanion.ui.components.ProgressDialog
-import com.mn.mncompanion.ui.components.SingleChoiceDialog
+import com.mn.mncompanion.ui.main.dialogs.AttachNfcDialog
+import com.mn.mncompanion.ui.main.dialogs.AvailableAppsDialog
+import com.mn.mncompanion.ui.main.dialogs.AvailableMnDevicesDialog
 import com.mn.mncompanion.ui.musicappcontrol.supportedApps
 import com.mn.mncompanion.ui.theme.MNCompanionTheme
 import kotlinx.coroutines.launch
@@ -49,7 +48,8 @@ fun MainScreen(viewModel: MainViewModel) {
     val availableApps by viewModel.availableApps.observeAsState(null)
     if (availableApps != null)
         AvailableAppsDialog(
-            apps = availableApps!!,
+            supportedApps = supportedApps.map { it.name },
+            availableApps = availableApps!!,
             onAppChosen = viewModel::onAppChosen,
             onDismiss = viewModel::closeAppChooser
         )
@@ -60,6 +60,8 @@ fun MainScreen(viewModel: MainViewModel) {
             mnDevices = availableMnDevices!!,
             onMnDeviceChosen = viewModel::onMnDeviceChosen,
             onDismiss = viewModel::closeMnDeviceChooser)
+
+    AttachNfcDialog(viewModel = viewModel)
 
     InputCheckBottomSheet(viewModel = viewModel)
     TrackInfoBottomSheet(viewModel = viewModel)
@@ -149,57 +151,6 @@ private fun MainScreen(
     }
 }
 
-@Composable
-private fun AvailableAppsDialog(
-    apps: List<MusicApp>,
-    onAppChosen: (MusicApp) -> Unit,
-    onDismiss: () -> Unit
-) {
-    if (apps.isEmpty()) {
-        val supportedAppsList = supportedApps.joinToString("\n") { "- ${it.name}" }
-        AlertDialog(
-            title = { Text(stringResource(R.string.no_apps_installed_title)) },
-            text = {Text(stringResource(R.string.no_apps_installed_text, supportedAppsList)) },
-            onDismissRequest = onDismiss,
-            confirmButton = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
-            }
-        )
-    } else {
-        SingleChoiceDialog(
-            elements = apps,
-            title = { Text(stringResource(R.string.choose_app_dialog_title)) },
-            onElementChosen = onAppChosen,
-            onDismiss = onDismiss
-        )
-    }
-}
-
-@Composable
-private fun AvailableMnDevicesDialog(
-    mnDevices: List<MnBluetoothDevice>,
-    onMnDeviceChosen: (MnBluetoothDevice) -> Unit,
-    onDismiss: () -> Unit
-) {
-    if (mnDevices.isEmpty()) {
-        AlertDialog(
-            title = { Text(stringResource(R.string.mn_devices_not_found_title)) },
-            text = { Text(stringResource(R.string.mn_devices_not_found_text)) },
-            onDismissRequest = onDismiss,
-            confirmButton = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
-            }
-        )
-    } else {
-        SingleChoiceDialog(
-            elements = mnDevices,
-            title = { Text(stringResource(R.string.choose_device)) },
-            onElementChosen = onMnDeviceChosen,
-            onDismiss = onDismiss
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InputCheckBottomSheet(viewModel: MainViewModel) {
@@ -210,7 +161,7 @@ private fun InputCheckBottomSheet(viewModel: MainViewModel) {
     val scope = rememberCoroutineScope()
 
     if (showBottomSheet) {
-        InputCheckSheet(
+        CheckInputSheet(
             onDismiss = {
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
                     if (!sheetState.isVisible) {
@@ -250,16 +201,11 @@ private fun TrackInfoBottomSheet(viewModel: MainViewModel) {
     }
 }
 
-@Preview(showBackground = true, locale = "ru")
 @Composable
-fun AvailableAppsDialogPreview() {
-    MNCompanionTheme {
-        AvailableAppsDialog(
-            apps = supportedApps,
-            onDismiss = {},
-            onAppChosen = {}
-        )
-    }
+private fun AttachNfcDialog(viewModel: MainViewModel) {
+    val showDialog by viewModel.showAttachNfcDialog.observeAsState(false)
+    if (showDialog)
+        AttachNfcDialog(onDismiss = viewModel::closeAttachNfcDialog)
 }
 
 @Preview(showBackground = true, locale = "ru", showSystemUi = true)

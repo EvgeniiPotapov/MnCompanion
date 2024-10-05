@@ -52,4 +52,7 @@
     <string name="mn_devices_not_found_title">MN-устройства не найдены</string>
     <string name="mn_devices_not_found_text">Найдите новое MN-устройство через настройки Bluetooth</string>
     <string name="flush_connection">Очистить соединение</string>
+
+    <string name="attach_nfc_title">Поднесите картридж</string>
+    <string name="attach_nfc_text">Информация о списке воспроизведения будет записана на метку внутри картриджа</string>
 </resources>

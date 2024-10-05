@@ -12,7 +12,7 @@ fun Context.getArtistSongsUri(artist: String): Uri {
     return ARTISTS_URI.buildUpon().appendEncodedPath(getArtistId(artist).toString()).appendEncodedPath("files").build()
 }
 
-fun getAllSongsUri() = ALL_SONGS_URI
+fun getAllSongsUri(): Uri = ALL_SONGS_URI
 
 private fun Context.getArtistId(artistName: String): Long = contentResolver.query(
     ARTISTS_URI,

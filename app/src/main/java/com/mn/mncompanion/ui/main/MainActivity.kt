@@ -2,23 +2,24 @@ package com.mn.mncompanion.ui.main
 
 import android.content.Intent
 import android.nfc.NfcAdapter
-import android.nfc.tech.MifareUltralight
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.mn.mncompanion.logd
+import com.mn.mncompanion.nfc.UltralightHolder
 import com.mn.mncompanion.nfc.enableUltralightForegroundDispatch
 import com.mn.mncompanion.nfc.getUltralightTag
 import com.mn.mncompanion.ui.theme.MNCompanionTheme
+import org.koin.android.ext.android.get
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
     private lateinit var nfcAdapter: NfcAdapter
-    private var nfcTag: MifareUltralight? = null
+    private val ultralightHolder: UltralightHolder = get()
 
     public override fun onPause() {
         super.onPause()
-        nfcTag = null
+        ultralightHolder.set(null)
         nfcAdapter.disableForegroundDispatch(this)
     }
 
@@ -31,9 +32,10 @@ class MainActivity : ComponentActivity() {
 
     public override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        nfcTag = intent.getUltralightTag()
-        if (nfcTag != null)
-            Toast.makeText(this, "New NFC Tag", Toast.LENGTH_SHORT).show()
+        with(intent.getUltralightTag()) {
+            logd("onNewIntent, getUltralightTag is $this")
+            ultralightHolder.set(this)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

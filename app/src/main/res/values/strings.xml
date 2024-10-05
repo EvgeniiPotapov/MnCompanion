@@ -54,4 +54,7 @@
     <string name="mn_devices_not_found_title">MN devices not found</string>
     <string name="mn_devices_not_found_text">Find a new MN device via Bluetooth settings</string>
     <string name="flush_connection">Clear MN-device connection</string>
+
+    <string name="attach_nfc_title">Attach cartridge</string>
+    <string name="attach_nfc_text">The playlist info will be written to a NFC tag inside cartridge</string>
 </resources>

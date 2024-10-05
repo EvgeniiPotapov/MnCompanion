@@ -1,4 +1,4 @@
-package com.mn.mncompanion.ui
+package com.mn.mncompanion.ui.checkInput
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollConfiguration
@@ -29,7 +29,7 @@ import com.mn.mncompanion.ui.theme.MNCompanionTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InputCheckSheet(
+fun CheckInputSheet(
     onDismiss: () -> Unit,
     onFlushConnection: () -> Unit,
     sheetState: SheetState,
@@ -39,13 +39,13 @@ fun InputCheckSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
-       InputCheckScreen(mnMessage = mnMessage, onFlushConnection = onFlushConnection)
+       CheckInputScreen(mnMessage = mnMessage, onFlushConnection = onFlushConnection)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalStdlibApi::class, ExperimentalFoundationApi::class)
 @Composable
-private fun InputCheckScreen(mnMessage: MnMessage?, onFlushConnection: () -> Unit) {
+private fun CheckInputScreen(mnMessage: MnMessage?, onFlushConnection: () -> Unit) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = { MediumTopAppBar(title = { Text(stringResource(R.string.input_data_check)) }) }
@@ -93,17 +93,17 @@ private fun buttonStateToString(state: Boolean?): String {
 
 @Preview(showSystemUi = true, showBackground = true, locale = "ru")
 @Composable
-fun InputCheckScreenPreview() {
+fun CheckEmptyInputScreenPreview() {
     MNCompanionTheme {
-        InputCheckScreen(null, { })
+        CheckInputScreen(null, { })
     }
 }
 
 @Preview(showSystemUi = true, showBackground = true, locale = "ru")
 @Composable
-fun InputCheckScreenPreview2() {
+fun CheckInputScreenPreview() {
     MNCompanionTheme {
-        InputCheckScreen(
+        CheckInputScreen(
             MnMessage(
                 volume = 22.toUInt(),
                 buttonUpPressed = true,

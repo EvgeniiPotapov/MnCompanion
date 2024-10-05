@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.annotation.MainThread
 import com.mn.mncompanion.R
 import com.mn.mncompanion.bluetooth.MnMessage
-import com.mn.mncompanion.bluetooth.hasNewValidNfcData
 import com.mn.mncompanion.bluetooth.pressedJustNow
 import com.mn.mncompanion.isApplicationInstalled
 import com.mn.mncompanion.ui.main.MusicApp
